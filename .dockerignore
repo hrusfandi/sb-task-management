@@ -1,0 +1,38 @@
+# Git files
+.git
+.gitignore
+
+# Environment files
+.env.local
+.env.*.local
+
+# Test files
+*_test.go
+*.test
+
+# Build artifacts
+main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation
+*.md
+docs/
+
+# Docker files (prevent recursive copy)
+Dockerfile*
+docker-compose*.yml
