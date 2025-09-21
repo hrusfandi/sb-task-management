@@ -62,40 +62,76 @@ Base URL: `http://localhost:8080/api`
 Authorization: Bearer <jwt-token>
 ```
 
-## API Examples
+## API Request Examples
 
-### Register User
+### 1. Register User
 ```bash
 curl -X POST http://localhost:8080/api/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com","password":"password123"}'
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123"
+  }'
 ```
 
-### Login
+### 2. Login
 ```bash
 curl -X POST http://localhost:8080/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"john@example.com","password":"password123"}'
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
 ```
 
-### Create Task (with token)
+### 3. Create Task
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"title":"My Task","description":"Task description","status":"pending"}'
+  -d '{
+    "title": "Complete project documentation",
+    "description": "Write comprehensive documentation for the REST API",
+    "status": "pending"
+  }'
 ```
 
-### Query Parameters for List Tasks
+### 4. List Tasks
+```bash
+curl -X GET "http://localhost:8080/api/tasks?page=1&limit=10&status=pending&sort_by=created_at&order=desc" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Query Parameters:**
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 10, max: 100)
 - `status` - Filter by status (pending, in_progress, completed)
 - `sort_by` - Sort field (created_at, updated_at, title, status)
 - `order` - Sort order (asc, desc)
 
-Example:
+### 5. Get Task Details
 ```bash
-GET /api/tasks?page=1&limit=10&status=pending&sort_by=created_at&order=desc
+curl -X GET http://localhost:8080/api/tasks/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### 6. Update Task
+```bash
+curl -X PUT http://localhost:8080/api/tasks/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete project documentation",
+    "description": "Write comprehensive documentation for the REST API with examples",
+    "status": "in_progress"
+  }'
+```
+
+### 7. Delete Task
+```bash
+curl -X DELETE http://localhost:8080/api/tasks/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ## Logging
