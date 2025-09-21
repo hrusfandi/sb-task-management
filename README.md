@@ -98,12 +98,9 @@ Example:
 GET /api/tasks?page=1&limit=10&status=pending&sort_by=created_at&order=desc
 ```
 
-## Testing
+## Logging
 
 ```bash
-# Run tests inside Docker
-docker compose exec app go test ./...
-
 # View logs
 docker compose logs -f app
 ```
