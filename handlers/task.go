@@ -87,11 +87,36 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse query parameters
 	status := r.URL.Query().Get("status")
-	filter := models.TaskFilter{
-		Status: status,
+	page := 1
+	limit := 10
+	sortBy := r.URL.Query().Get("sort_by")
+	order := r.URL.Query().Get("order")
+
+	// Parse page
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
 	}
 
+	// Parse limit
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	filter := models.TaskFilter{
+		Status: status,
+		Page:   page,
+		Limit:  limit,
+		SortBy: sortBy,
+		Order:  order,
+	}
+
+	// Validate status if provided
 	if status != "" &&
 	   status != models.TaskStatusPending &&
 	   status != models.TaskStatusInProgress &&
@@ -100,18 +125,13 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks, err := h.taskRepo.GetTasksByUserID(userClaims.UserID, filter)
+	result, err := h.taskRepo.GetTasksByUserID(userClaims.UserID, filter)
 	if err != nil {
 		utils.RespondError(w, http.StatusInternalServerError, "Failed to fetch tasks")
 		return
 	}
 
-	response := map[string]interface{}{
-		"tasks": tasks,
-		"total": len(tasks),
-	}
-
-	utils.RespondSuccess(w, "Tasks fetched successfully", response)
+	utils.RespondSuccess(w, "Tasks fetched successfully", result)
 }
 
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {

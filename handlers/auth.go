@@ -47,13 +47,21 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 	req.Password = strings.TrimSpace(req.Password)
 
-	if req.Name == "" || req.Email == "" || req.Password == "" {
-		utils.RespondError(w, http.StatusBadRequest, "Name, email, and password are required")
+	// Validate name
+	if valid, msg := utils.ValidateName(req.Name); !valid {
+		utils.RespondError(w, http.StatusBadRequest, msg)
 		return
 	}
 
-	if len(req.Password) < 6 {
-		utils.RespondError(w, http.StatusBadRequest, "Password must be at least 6 characters")
+	// Validate email
+	if !utils.ValidateEmail(req.Email) {
+		utils.RespondError(w, http.StatusBadRequest, "Invalid email format")
+		return
+	}
+
+	// Validate password
+	if valid, msg := utils.ValidatePassword(req.Password); !valid {
+		utils.RespondError(w, http.StatusBadRequest, msg)
 		return
 	}
 

@@ -25,13 +25,25 @@ const (
 )
 
 type TaskFilter struct {
-	Status string
+	Status  string
+	Page    int
+	Limit   int
+	SortBy  string // created_at, updated_at, title, status
+	Order   string // asc, desc
+}
+
+type TasksResponse struct {
+	Tasks      []Task `json:"tasks"`
+	Total      int64  `json:"total"`
+	Page       int    `json:"page"`
+	Limit      int    `json:"limit"`
+	TotalPages int    `json:"total_pages"`
 }
 
 type TaskRepository interface {
 	CreateTask(task *Task) error
 	GetTaskByID(id uint) (*Task, error)
-	GetTasksByUserID(userID uint, filter TaskFilter) ([]Task, error)
+	GetTasksByUserID(userID uint, filter TaskFilter) (*TasksResponse, error)
 	UpdateTask(task *Task) error
 	DeleteTask(id uint) error
 }
@@ -61,19 +73,82 @@ func (r *taskRepository) GetTaskByID(id uint) (*Task, error) {
 	return &task, nil
 }
 
-func (r *taskRepository) GetTasksByUserID(userID uint, filter TaskFilter) ([]Task, error) {
+func (r *taskRepository) GetTasksByUserID(userID uint, filter TaskFilter) (*TasksResponse, error) {
 	var tasks []Task
+	var total int64
+
+	// Base query
+	baseQuery := r.db.Model(&Task{}).Where("user_id = ?", userID)
+
+	// Apply status filter
+	if filter.Status != "" {
+		baseQuery = baseQuery.Where("status = ?", filter.Status)
+	}
+
+	// Count total records
+	if err := baseQuery.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	// Set defaults for pagination
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 {
+		filter.Limit = 10
+	}
+	if filter.Limit > 100 {
+		filter.Limit = 100 // Max limit
+	}
+
+	// Calculate offset
+	offset := (filter.Page - 1) * filter.Limit
+
+	// Build query with preload
 	query := r.db.Preload("User").Where("user_id = ?", userID)
 
+	// Apply status filter
 	if filter.Status != "" {
 		query = query.Where("status = ?", filter.Status)
 	}
 
-	err := query.Order("created_at DESC").Find(&tasks).Error
+	// Apply sorting
+	orderBy := "created_at DESC" // default
+	if filter.SortBy != "" {
+		validSortFields := map[string]bool{
+			"created_at": true,
+			"updated_at": true,
+			"title":      true,
+			"status":     true,
+		}
+		if validSortFields[filter.SortBy] {
+			order := "DESC"
+			if filter.Order == "asc" {
+				order = "ASC"
+			}
+			orderBy = filter.SortBy + " " + order
+		}
+	}
+
+	// Apply pagination and sorting
+	err := query.Order(orderBy).Limit(filter.Limit).Offset(offset).Find(&tasks).Error
 	if err != nil {
 		return nil, err
 	}
-	return tasks, nil
+
+	// Calculate total pages
+	totalPages := int(total) / filter.Limit
+	if int(total)%filter.Limit > 0 {
+		totalPages++
+	}
+
+	return &TasksResponse{
+		Tasks:      tasks,
+		Total:      total,
+		Page:       filter.Page,
+		Limit:      filter.Limit,
+		TotalPages: totalPages,
+	}, nil
 }
 
 func (r *taskRepository) UpdateTask(task *Task) error {
