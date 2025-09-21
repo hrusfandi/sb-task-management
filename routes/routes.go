@@ -13,10 +13,10 @@ import (
 func SetupRoutes(db *gorm.DB) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
+	r.Use(authMiddleware.RequestLogger) // Our custom detailed logger
+	r.Use(middleware.Recoverer)
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:*", "https://localhost:*"},
