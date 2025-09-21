@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/hrusfandi/sb-task-management/handlers"
+	authMiddleware "github.com/hrusfandi/sb-task-management/middleware"
 	"github.com/hrusfandi/sb-task-management/models"
 	"gorm.io/gorm"
 )
@@ -29,11 +30,24 @@ func SetupRoutes(db *gorm.DB) *chi.Mux {
 	userRepo := models.NewUserRepository(db)
 	authHandler := handlers.NewAuthHandler(userRepo)
 
+	taskRepo := models.NewTaskRepository(db)
+	taskHandler := handlers.NewTaskHandler(taskRepo)
+
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)
 
-		// Protected routes will be added here later
+		r.Group(func(r chi.Router) {
+			r.Use(authMiddleware.JWTAuth)
+
+			r.Route("/tasks", func(r chi.Router) {
+				r.Post("/", taskHandler.CreateTask)
+				r.Get("/", taskHandler.ListTasks)
+				r.Get("/{id}", taskHandler.GetTask)
+				r.Put("/{id}", taskHandler.UpdateTask)
+				r.Delete("/{id}", taskHandler.DeleteTask)
+			})
+		})
 	})
 
 	return r
